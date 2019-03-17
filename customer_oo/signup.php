@@ -17,10 +17,10 @@ if($_POST) {
 
     if(isset($_POST["username"]) AND isset($_POST["password"]) ) {
         $cust->email = $_POST["username"];
-        $cust->password_hash = $_POST["password"];
+        $cust->password = $_POST["password"];
         $cust->mobile = 'default';
         $cust->name = 'default';
-        $cust->insert_db_record();
+        $cust->create_record();
     }
 }
 ?>

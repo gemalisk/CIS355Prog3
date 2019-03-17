@@ -7,21 +7,21 @@ class Customer {
     public $id;
     public $name;
     public $email;
-    public $password_hash;
+	public $password;
     public $mobile;
     private $noerrors = true;
     private $nameError = null;
     private $emailError = null;
-    private $password_hashError = null;
+	private $passwordError = null;
     private $mobileError = null;
     private $title = "Customer";
-    private $tableName = "customers";
+    private $tableName = "customer";
     
     function create_record() { // display "create" form
         $this->generate_html_top (1);
         $this->control_group("name", $this->nameError, $this->name);
         $this->control_group("email", $this->emailError, $this->email);
-        $this->control_group("password_hash", $this->password_hashError, $this->password_hash);
+		$this->control_group("password", $this->passwordError, $this->password);
         $this->control_group("mobile", $this->mobileError, $this->mobile);
         $this->generate_html_bottom (1);
     } // end function create_record()
@@ -31,7 +31,7 @@ class Customer {
         $this->generate_html_top(2);
         $this->control_group("name", $this->nameError, $this->name, "readonly");
         $this->control_group("email", $this->emailError, $this->email, "readonly");
-        $this->control_group("password_hash", $this->password_hashError, $this->password_hash, "readonly");
+		$this->control_group("password", $this->passwordError, $this->password, "readonly");
         $this->control_group("mobile", $this->mobileError, $this->mobile, "readonly");
         $this->generate_html_bottom(2);
     } // end function read_record()
@@ -41,7 +41,7 @@ class Customer {
         $this->generate_html_top(3, $id);
         $this->control_group("name", $this->nameError, $this->name);
         $this->control_group("email", $this->emailError, $this->email);
-        $this->control_group("password_hash", $this->password_hashError, $this->password_hash);
+		$this->control_group("password", $this->passwordError, $this->password);
         $this->control_group("mobile", $this->mobileError, $this->mobile);
         $this->generate_html_bottom(3);
     } // end function update_record()
@@ -51,7 +51,7 @@ class Customer {
         $this->generate_html_top(4, $id);
         $this->control_group("name", $this->nameError, $this->name, "readonly");
         $this->control_group("email", $this->emailError, $this->email, "readonly");
-        $this->control_group("password_hash", $this->password_hashError, $this->password_hash, "readonly");
+		$this->control_group("password", $this->passwordError, $this->password, "readonly");
         $this->control_group("mobile", $this->mobileError, $this->mobile, "readonly");
         $this->generate_html_bottom(4);
     } // end function delete_record()
@@ -60,9 +60,9 @@ class Customer {
         if ($this->fieldsAllValid ()) {
             $pdo = Database::connect();
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $sql = "INSERT INTO $this->tableName (name,email,password_hash,mobile) values(?, ?, ?, ?)";
+            $sql = "INSERT INTO $this->tableName (name,email,password_hash,mobile) values(?, ?, ?)";
             $q = $pdo->prepare($sql);
-            $q->execute(array($this->id,$this->name,$this->email,$this->password_hash,$this->mobile));
+            $q->execute(array($this->id,$this->name,$this->email,$this->password,$this->mobile));
             Database::disconnect();
             header("Location: $this->tableName.php");
         }
@@ -81,7 +81,7 @@ class Customer {
         Database::disconnect();
         $this->name = $data['name'];
         $this->email = $data['email'];
-        $this->password_hash = $data['password_hash'];
+		$this->password = $data['password_hash'];
         $this->mobile = $data['mobile'];
     } // function select_db_record()
     
@@ -93,7 +93,7 @@ class Customer {
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $sql = "UPDATE $this->tableName  set name = ?, email = ?, password_hash = ?, mobile = ? WHERE id = ?";
             $q = $pdo->prepare($sql);
-            $q->execute(array($this->name,$this->email,$this->password_hash,$this->mobile,$this->id));
+            $q->execute(array($this->name,$this->email,$this->password,$this->mobile,$this->id));
             Database::disconnect();
             header("Location: $this->tableName.php");
         }
@@ -223,8 +223,8 @@ class Customer {
             $this->emailError = 'Please enter a valid email address: me@mydomain.com';
             $valid = false;
         }
-        if (empty($this->password_hash)) {
-            $this->password_hashError = 'Please enter Password';
+		if (empty($this->password)) {
+            $this->emailError = 'Please enter Email Address';
             $valid = false;
         } 
         if (empty($this->mobile)) {
@@ -263,7 +263,6 @@ class Customer {
                                 <tr>
                                     <th>Name</th>
                                     <th>Email</th>
-                                    <th>Password</th>
                                     <th>Mobile</th>
                                     <th>Action</th>
                                 </tr>
@@ -276,7 +275,6 @@ class Customer {
             echo "<tr>";
             echo "<td>". $row["name"] . "</td>";
             echo "<td>". $row["email"] . "</td>";
-            echo "<td>". $row["password_hash"] . "</td>";
             echo "<td>". $row["mobile"] . "</td>";
             echo "<td width=250>";
             echo "<a class='btn btn-info' href='$this->tableName.php?fun=2&id=".$row["id"]."'>Read</a>";
