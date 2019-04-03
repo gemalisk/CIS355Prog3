@@ -7,67 +7,67 @@ class Customer {
     public $id;
     public $name;
     public $email;
-	public $password;
     public $mobile;
+    public $password; // text from HTML form
+    public $password_hashed; // hashed password
     private $noerrors = true;
     private $nameError = null;
     private $emailError = null;
-	private $passwordError = null;
     private $mobileError = null;
+    private $passwordError = null;
     private $title = "Customer";
-    private $tableName = "customer";
+    private $tableName = "customers";
     
     function create_record() { // display "create" form
         $this->generate_html_top (1);
-        $this->control_group("name", $this->nameError, $this->name);
-        $this->control_group("email", $this->emailError, $this->email);
-		$this->control_group("password", $this->passwordError, $this->password);
-        $this->control_group("mobile", $this->mobileError, $this->mobile);
+        $this->generate_form_group("name", $this->nameError, $this->name, "autofocus");
+        $this->generate_form_group("email", $this->emailError, $this->email);
+        $this->generate_form_group("mobile", $this->mobileError, $this->mobile);
+		$this->generate_form_group("password", $this->passwordError, $this->password, "", "password");
         $this->generate_html_bottom (1);
     } // end function create_record()
     
     function read_record($id) { // display "read" form
         $this->select_db_record($id);
         $this->generate_html_top(2);
-        $this->control_group("name", $this->nameError, $this->name, "readonly");
-        $this->control_group("email", $this->emailError, $this->email, "readonly");
-		$this->control_group("password", $this->passwordError, $this->password, "readonly");
-        $this->control_group("mobile", $this->mobileError, $this->mobile, "readonly");
+        $this->generate_form_group("name", $this->nameError, $this->name, "disabled");
+        $this->generate_form_group("email", $this->emailError, $this->email, "disabled");
+        $this->generate_form_group("mobile", $this->mobileError, $this->mobile, "disabled");
         $this->generate_html_bottom(2);
     } // end function read_record()
     
     function update_record($id) { // display "update" form
         if($this->noerrors) $this->select_db_record($id);
         $this->generate_html_top(3, $id);
-        $this->control_group("name", $this->nameError, $this->name);
-        $this->control_group("email", $this->emailError, $this->email);
-		$this->control_group("password", $this->passwordError, $this->password);
-        $this->control_group("mobile", $this->mobileError, $this->mobile);
+        $this->generate_form_group("name", $this->nameError, $this->name, "autofocus onfocus='this.select()'");
+        $this->generate_form_group("email", $this->emailError, $this->email);
+        $this->generate_form_group("mobile", $this->mobileError, $this->mobile);
         $this->generate_html_bottom(3);
     } // end function update_record()
     
     function delete_record($id) { // display "read" form
         $this->select_db_record($id);
         $this->generate_html_top(4, $id);
-        $this->control_group("name", $this->nameError, $this->name, "readonly");
-        $this->control_group("email", $this->emailError, $this->email, "readonly");
-		$this->control_group("password", $this->passwordError, $this->password, "readonly");
-        $this->control_group("mobile", $this->mobileError, $this->mobile, "readonly");
+        $this->generate_form_group("name", $this->nameError, $this->name, "disabled");
+        $this->generate_form_group("email", $this->emailError, $this->email, "disabled");
+        $this->generate_form_group("mobile", $this->mobileError, $this->mobile, "disabled");
         $this->generate_html_bottom(4);
     } // end function delete_record()
     
     function insert_db_record () {
-        if ($this->fieldsAllValid ()) {
+        if ($this->fieldsAllValid()) { // validate user input
+            // if valid data, insert record into table
             $pdo = Database::connect();
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $sql = "INSERT INTO $this->tableName (name,email,password_hash,mobile) values(?, ?, ?)";
+	    $this->password_hashed = MD5($this->password);
+            $sql = "INSERT INTO $this->tableName (name,email,mobile,password_hashed) values(?, ?, ?, ?)";
             $q = $pdo->prepare($sql);
-            $q->execute(array($this->id,$this->name,$this->email,$this->password,$this->mobile));
+            $q->execute(array($this->name, $this->email, $this->mobile, $this->password_hashed));
             Database::disconnect();
-            header("Location: $this->tableName.php");
+            header("Location: $this->tableName.php"); // go back to "list"
         }
         else {
-            $this->create_record(); // go back to "create" form
+		$this->create_record(); 
         }
     } // end function insert_db_record
     
@@ -81,19 +81,18 @@ class Customer {
         Database::disconnect();
         $this->name = $data['name'];
         $this->email = $data['email'];
-		$this->password = $data['password_hash'];
         $this->mobile = $data['mobile'];
     } // function select_db_record()
     
-    function update_db_record ($id) {
+        function update_db_record ($id) {
         $this->id = $id;
         if ($this->fieldsAllValid()) {
             $this->noerrors = true;
             $pdo = Database::connect();
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $sql = "UPDATE $this->tableName  set name = ?, email = ?, password_hash = ?, mobile = ? WHERE id = ?";
+            $sql = "UPDATE $this->tableName  set name = ?, email = ?, mobile = ? WHERE id = ?";
             $q = $pdo->prepare($sql);
-            $q->execute(array($this->name,$this->email,$this->password,$this->mobile,$this->id));
+            $q->execute(array($this->name,$this->email,$this->mobile,$this->id));
             Database::disconnect();
             header("Location: $this->tableName.php");
         }
@@ -101,7 +100,7 @@ class Customer {
             $this->noerrors = false;
             $this->update_record($id);  // go back to "update" form
         }
-    } // end function update_db_record 
+}//end function update db record
     
     function delete_db_record($id) {
         $pdo = Database::connect();
@@ -116,19 +115,20 @@ class Customer {
     private function generate_html_top ($fun, $id=null) {
         switch ($fun) {
             case 1: // create
-                $funWord = "Create"; $funNext = 11; 
+                $funWord = "Create"; $funNext = "insert_db_record"; 
                 break;
             case 2: // read
-                $funWord = "Read"; $funNext = 0; 
+                $funWord = "Read"; $funNext = "none"; 
                 break;
             case 3: // update
-                $funWord = "Update"; $funNext = "33&id=" . $id; 
+                $funWord = "Update"; $funNext = "update_db_record&id=" . $id; 
                 break;
             case 4: // delete
-                $funWord = "Delete"; $funNext = "44&id=" . $id; 
+                $funWord = "Delete"; $funNext = "delete_db_record&id=" . $id; 
                 break;
-            case 0: // list
-            default:
+            default: 
+                echo "Error: Invalid function: generate_html_top()"; 
+                exit();
                 break;
         }
         echo "<!DOCTYPE html>
@@ -140,10 +140,11 @@ class Customer {
                 <meta charset='UTF-8'>
                 <link href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css' rel='stylesheet'>
                 <script src='https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/js/bootstrap.min.js'></script>
+                <style>label {width: 5em;}</style>
                     "; 
         echo "
             </head>";
-                echo "
+        echo "
             <body>
                 <div class='container'>
                     <div class='span10 offset1'>
@@ -168,8 +169,9 @@ class Customer {
             case 4: // delete
                 $funButton = "<button type='submit' class='btn btn-danger'>Delete</button>"; 
                 break;
-            case 0: // list
-            default: // list
+            default: 
+                echo "Error: Invalid function: generate_html_bottom()"; 
+                exit();
                 break;
         }
         echo " 
@@ -179,19 +181,19 @@ class Customer {
                             </div>
                         </form>
                     </div>
-
                 </div> <!-- /container -->
             </body>
         </html>
                     ";
     } // end function generate_html_bottom()
     
-    private function control_group ($label, $labelError, $val, $modifier="") {
-        echo "<div class='control-group";
+	/*
+    private function generate_form_group ($label, $labelError, $val, $modifier="") {
+        echo "<div class='form-group";
         echo !empty($labelError) ? ' alert alert-danger ' : '';
         echo "'>";
-        echo "<label class='control-label'>$label</label>";
-        echo "<div class='controls'>";
+        echo "<label class='control-label'>$label &nbsp;</label>";
+        //echo "<div class='controls'>";
         echo "<input "
             . "name='$label' "
             . "type='text' "
@@ -205,9 +207,32 @@ class Customer {
             echo "&nbsp;&nbsp;" . $labelError;
             echo "</span>";
         }
-        echo "</div>";
-        echo "</div>";
-    } // end function control_group()
+        //echo "</div>"; // end div: class='controls'
+        echo "</div>"; // end div: class='form-group'
+    } // end function generate_form_group()
+	*/
+	 private function generate_form_group ($label, $labelError, $val, $modifier="", $fieldType="text") {
+        echo "<div class='form-group";
+        echo !empty($labelError) ? ' alert alert-danger ' : '';
+        echo "'>";
+        echo "<label class='control-label'>$label &nbsp;</label>";
+        //echo "<div class='controls'>";
+        echo "<input "
+            . "name='$label' "
+            . "type='$fieldType' "
+            . "$modifier "
+            . "placeholder='$label' "
+            . "value='";
+        echo !empty($val) ? $val : '';
+        echo "'>";
+        if (!empty($labelError)) {
+            echo "<span class='help-inline'>";
+            echo "&nbsp;&nbsp;" . $labelError;
+            echo "</span>";
+        }
+        //echo "</div>"; // end div: class='controls'
+        echo "</div>"; // end div: class='form-group'
+    } // end function generate_form_group()
     
     private function fieldsAllValid () {
         $valid = true;
@@ -223,15 +248,12 @@ class Customer {
             $this->emailError = 'Please enter a valid email address: me@mydomain.com';
             $valid = false;
         }
-		if (empty($this->password)) {
-            $this->emailError = 'Please enter Email Address';
-            $valid = false;
-        } 
         if (empty($this->mobile)) {
-            $this->mobileError = 'Please enter Mobile Number';
+            $this->mobileError = 'Please enter Mobile phone number';
             $valid = false;
         }
         return $valid;
+		
     } // end function fieldsAllValid() 
     
     function list_records() {
@@ -254,9 +276,9 @@ class Customer {
                         <h3>$this->title" . "s" . "</h3>
                     </p>
                     <p>
-                        <a href='$this->tableName.php?fun=1' class='btn btn-success'>Create</a>
-                        <a href='logout.php'> <button>Log Out</button> </a>
-                    </p>
+                        <a href='$this->tableName.php?fun=display_create_form' class='btn btn-success'>Create</a>
+						<a href='logout.php' class='btn btn-warning'>Logout</a> 
+					</p>
                     <div class='row'>
                         <table class='table table-striped table-bordered'>
                             <thead>
@@ -270,18 +292,18 @@ class Customer {
                             <tbody>
                     ";
         $pdo = Database::connect();
-        $sql = "SELECT * FROM $this->tableName ORDER BY id";
+        $sql = "SELECT * FROM $this->tableName ORDER BY id DESC";
         foreach ($pdo->query($sql) as $row) {
             echo "<tr>";
             echo "<td>". $row["name"] . "</td>";
             echo "<td>". $row["email"] . "</td>";
             echo "<td>". $row["mobile"] . "</td>";
             echo "<td width=250>";
-            echo "<a class='btn btn-info' href='$this->tableName.php?fun=2&id=".$row["id"]."'>Read</a>";
+            echo "<a class='btn btn-info' href='$this->tableName.php?fun=display_read_form&id=".$row["id"]."'>Read</a>";
             echo "&nbsp;";
-            echo "<a class='btn btn-warning' href='$this->tableName.php?fun=3&id=".$row["id"]."'>Update</a>";
+            echo "<a class='btn btn-warning' href='$this->tableName.php?fun=display_update_form&id=".$row["id"]."'>Update</a>";
             echo "&nbsp;";
-            echo "<a class='btn btn-danger' href='$this->tableName.php?fun=4&id=".$row["id"]."'>Delete</a>";
+            echo "<a class='btn btn-danger' href='$this->tableName.php?fun=display_delete_form&id=".$row["id"]."'>Delete</a>";
             echo "</td>";
             echo "</tr>";
         }
@@ -291,9 +313,7 @@ class Customer {
                         </table>
                     </div>
                 </div>
-
             </body>
-
         </html>
                     ";  
     } // end function list_records()
