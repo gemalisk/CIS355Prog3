@@ -187,30 +187,6 @@ class Customer {
                     ";
     } // end function generate_html_bottom()
     
-	/*
-    private function generate_form_group ($label, $labelError, $val, $modifier="") {
-        echo "<div class='form-group";
-        echo !empty($labelError) ? ' alert alert-danger ' : '';
-        echo "'>";
-        echo "<label class='control-label'>$label &nbsp;</label>";
-        //echo "<div class='controls'>";
-        echo "<input "
-            . "name='$label' "
-            . "type='text' "
-            . "$modifier "
-            . "placeholder='$label' "
-            . "value='";
-        echo !empty($val) ? $val : '';
-        echo "'>";
-        if (!empty($labelError)) {
-            echo "<span class='help-inline'>";
-            echo "&nbsp;&nbsp;" . $labelError;
-            echo "</span>";
-        }
-        //echo "</div>"; // end div: class='controls'
-        echo "</div>"; // end div: class='form-group'
-    } // end function generate_form_group()
-	*/
 	 private function generate_form_group ($label, $labelError, $val, $modifier="", $fieldType="text") {
         echo "<div class='form-group";
         echo !empty($labelError) ? ' alert alert-danger ' : '';
@@ -271,6 +247,7 @@ class Customer {
             </head>
             <body>
 		<a href='https://github.com/gemalisk/CIS355Prog3' target='_blank'>Github</a><br />
+                <a href='https://github.com/gemalisk/CIS355Prog3/blob/master/Prog03/CustomerUML.JPG' target='_blank'>UML Diagram</a><br />
                 <div class='container'>
                     <p class='row'>
                         <h3>$this->title" . "s" . "</h3>
